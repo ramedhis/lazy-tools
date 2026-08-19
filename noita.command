@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # ============================================================
-#              NOITA GIF UPSCALER & CONVERTER
+#                 LAZY GIF TO MP4 UPSCALER
 #                       macOS Edition
 # ============================================================
 #
-# For Universal Intel + Apple Silicon
+# Universal Intel + Apple Silicon
 #
 # Required:
 #   - gifsicle
@@ -22,14 +22,56 @@
 
 print_header() {
     echo "================================================"
-    echo "       NOITA GIF UPSCALER & CONVERTER (x4)"
-    echo "                  macOS Edition"
+    echo "            LAZY GIF TO MP4 UPSCALER"
+    echo "                 macOS Edition"
     echo "================================================"
     echo
 }
 
+
 clear
 print_header
+
+
+# ------------------------------------------------------------
+# Goodbye screen (used whenever the program exits normally)
+# ------------------------------------------------------------
+
+show_goodbye() {
+
+    local message="$1"
+
+    clear
+    print_header
+
+    echo "================================================"
+    echo "                  GOODBYE! :)"
+    echo "================================================"
+    echo
+
+    if [ -n "$message" ]; then
+        echo "$message"
+        echo
+    fi
+
+    read -p "Press Enter to close..."
+    exit 0
+
+}
+
+
+# ------------------------------------------------------------
+# Directory the .command file lives in (output goes here)
+# ------------------------------------------------------------
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+
+# ------------------------------------------------------------
+# Upscale factor (how much to scale each GIF by, e.g. x4)
+# ------------------------------------------------------------
+
+UPSCALE_FACTOR=4
 
 
 # ------------------------------------------------------------
@@ -42,9 +84,11 @@ case "$ARCH" in
     arm64)
         ARCH_NAME="Apple Silicon"
         ;;
+
     x86_64)
         ARCH_NAME="Intel"
         ;;
+
     *)
         ARCH_NAME="Unknown"
         ;;
@@ -84,6 +128,62 @@ load_homebrew() {
     fi
 
     return 1
+}
+
+
+# ============================================================
+# HELPER: INSTALL A DEPENDENCY VIA HOMEBREW
+# ============================================================
+
+install_dependency() {
+
+    local pkg_name="$1"     # e.g. "gifsicle"
+    local title="$2"        # e.g. "INSTALLING GIFSICLE"
+
+    local title_len=${#title}
+    local pad_l=$(( (48 - title_len) / 2 ))
+
+    echo
+    echo "================================================"
+    printf "%*s%s\n" "$pad_l" "" "$title"
+    echo "================================================"
+    echo
+
+    brew install "$pkg_name"
+
+    if [ $? -ne 0 ]; then
+
+        echo
+        echo "ERROR: Failed to install $pkg_name."
+        echo
+        echo "You can try manually with:"
+        echo
+        echo "  brew install $pkg_name"
+        echo
+
+        read -p "Press Enter to close..."
+        exit 1
+
+    fi
+
+    eval "$(brew shellenv)"
+
+    if ! command -v "$pkg_name" >/dev/null 2>&1; then
+
+        echo
+        echo "ERROR: $pkg_name was installed but could"
+        echo "not be found."
+        echo
+
+        read -p "Press Enter to close..."
+        exit 1
+
+    fi
+
+    echo
+    echo "$pkg_name installed successfully."
+    echo
+
 }
 
 
@@ -149,7 +249,7 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
         print_header
 
         echo "================================================"
-        echo "          MISSING COMPONENTS"
+        echo "              MISSING COMPONENTS"
         echo "================================================"
         echo
 
@@ -189,6 +289,7 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
 
     }
 
+
     print_missing_prompt
 
 
@@ -198,7 +299,8 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
 
     while true; do
 
-        read -p "Choice: " INSTALL_CHOICE
+        read -n 1 INSTALL_CHOICE
+        echo
 
         case "$INSTALL_CHOICE" in
 
@@ -268,7 +370,8 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
 
         while true; do
 
-            read -p "Choice: " BREW_CHOICE
+            read -n 1 BREW_CHOICE
+            echo
 
             case "$BREW_CHOICE" in
 
@@ -289,7 +392,7 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
 
                         echo
                         echo "================================================"
-                        echo "           HOMEBREW INSTALL FAILED"
+                        echo "            HOMEBREW INSTALL FAILED"
                         echo "================================================"
                         echo
                         echo "Homebrew could not be installed."
@@ -361,52 +464,7 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
     # ========================================================
 
     if [ "$GIFSICLE_INSTALLED" = false ]; then
-
-        echo
-        echo "================================================"
-        echo "              INSTALLING GIFSICLE"
-        echo "================================================"
-        echo
-
-        brew install gifsicle
-
-
-        if [ $? -ne 0 ]; then
-
-            echo
-            echo "ERROR: Failed to install gifsicle."
-            echo
-            echo "You can try manually with:"
-            echo
-            echo "  brew install gifsicle"
-            echo
-
-            read -p "Press Enter to close..."
-            exit 1
-
-        fi
-
-
-        eval "$(brew shellenv)"
-
-
-        if ! command -v gifsicle >/dev/null 2>&1; then
-
-            echo
-            echo "ERROR: gifsicle was installed but could"
-            echo "not be found."
-            echo
-
-            read -p "Press Enter to close..."
-            exit 1
-
-        fi
-
-
-        echo
-        echo "gifsicle installed successfully."
-        echo
-
+        install_dependency "gifsicle" "INSTALLING GIFSICLE"
     fi
 
 
@@ -415,52 +473,7 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
     # ========================================================
 
     if [ "$FFMPEG_INSTALLED" = false ]; then
-
-        echo
-        echo "================================================"
-        echo "               INSTALLING FFMPEG"
-        echo "================================================"
-        echo
-
-        brew install ffmpeg
-
-
-        if [ $? -ne 0 ]; then
-
-            echo
-            echo "ERROR: Failed to install ffmpeg."
-            echo
-            echo "You can try manually with:"
-            echo
-            echo "  brew install ffmpeg"
-            echo
-
-            read -p "Press Enter to close..."
-            exit 1
-
-        fi
-
-
-        eval "$(brew shellenv)"
-
-
-        if ! command -v ffmpeg >/dev/null 2>&1; then
-
-            echo
-            echo "ERROR: ffmpeg was installed but could"
-            echo "not be found."
-            echo
-
-            read -p "Press Enter to close..."
-            exit 1
-
-        fi
-
-
-        echo
-        echo "ffmpeg installed successfully."
-        echo
-
+        install_dependency "ffmpeg" "INSTALLING FFMPEG"
     fi
 
 
@@ -501,42 +514,227 @@ sleep 1
 
 
 # ------------------------------------------------------------
-# Clear clutter, reprint header, show a clean menu
+# Main menu
 # ------------------------------------------------------------
 
 show_menu() {
+
     clear
     print_header
+
+    echo "Current upscale factor: x${UPSCALE_FACTOR}"
     echo
+
     echo "Select:"
     echo
-    echo "  [O] Open GIF"
+    echo "  [O] Open GIF(s)"
+    echo "  [F] Set Upscale Factor"
+    echo "  [I] Info"
     echo "  [Q] Quit"
     echo
+
+}
+
+
+# ------------------------------------------------------------
+# Set upscale factor screen
+# ------------------------------------------------------------
+
+set_factor() {
+
+    while true; do
+
+        clear
+        print_header
+
+        echo "================================================"
+        echo "              SET UPSCALE FACTOR"
+        echo "================================================"
+        echo
+        echo "Current factor: x${UPSCALE_FACTOR}"
+        echo
+        echo "This multiplies each GIF's original size."
+        echo "Example: x4 turns a 320x180 GIF into 1280x720."
+        echo
+        echo "Enter a new factor (e.g. 2, 3, 4, 1.5):"
+        echo "Or press [Enter] to keep the current factor (x${UPSCALE_FACTOR})."
+        echo
+
+        read -p "Factor: " FACTOR_INPUT
+
+        # Blank input keeps the current factor.
+        if [ -z "$FACTOR_INPUT" ]; then
+            break
+        fi
+
+        if [[ "$FACTOR_INPUT" =~ ^[0-9]+([.][0-9]+)?$ ]] && awk "BEGIN {exit !($FACTOR_INPUT > 0)}"; then
+            UPSCALE_FACTOR="$FACTOR_INPUT"
+            break
+        else
+            echo
+            echo "Invalid input. Please enter a positive number."
+            echo
+            sleep 1
+        fi
+
+    done
+
+    show_menu
+
+}
+
+
+# ------------------------------------------------------------
+# Info screen
+# ------------------------------------------------------------
+
+show_info() {
+
+    clear
+    print_header
+
+    echo "================================================"
+    echo "                    INFO"
+    echo "================================================"
+    echo
+
+    echo "Lazy GIF to MP4 Upscaler upscales any GIF by"
+    echo "a factor you set (default x4) and converts"
+    echo "it into MP4, using gifsicle and ffmpeg."
+    echo
+
+    echo "Set the factor from the main menu with [F] --"
+    echo "it applies to every file you process afterward."
+    echo
+
+    echo "You can select multiple GIFs at once -- they're"
+    echo "processed one at a time automatically."
+    echo
+
+    echo "Read more on README.md"
+    echo
+    echo "[B] Back"
+    echo
+
+}
+
+
+# ------------------------------------------------------------
+# Animated "..." while a background job (gifsicle/ffmpeg) runs
+# ------------------------------------------------------------
+
+animate_step() {
+
+    local pid="$1"
+    local dots=("" "." ". ." ". . .")
+    local i=0
+
+    while kill -0 "$pid" 2>/dev/null; do
+        printf "\r[%d/%d] %s %-7s" "$INDEX" "$TOTAL" "$ORIGINAL_FILENAME" "${dots[$((i % 4))]}"
+        i=$((i + 1))
+        sleep 0.35
+    done
+
+    wait "$pid"
+    return $?
+
+}
+
+
+# ------------------------------------------------------------
+# Select-GIF(s) screen header (used on open + on retry)
+# ------------------------------------------------------------
+
+print_select_screen() {
+
+    clear
+    print_header
+
+    echo "================================================"
+    echo "                 SELECT GIF(S)"
+    echo "================================================"
+    echo
+
+}
+
+
+# ------------------------------------------------------------
+# "Convert more GIF(s)?" prompt (used after each batch)
+#
+# Returns 0 if the user wants to convert more (loop again),
+# 1 if the user wants to return to the main menu.
+# ------------------------------------------------------------
+
+ask_convert_more() {
+
+    while true; do
+
+        clear
+        print_header
+
+        echo "================================================"
+        echo "                CONVERSION COMPLETE"
+        echo "================================================"
+        echo
+
+        echo "Current upscale factor: x${UPSCALE_FACTOR}"
+        echo
+
+        echo "Convert more GIF(s) with the same factor? [y/n]"
+        echo
+
+        read -n 1 AGAIN_CHOICE
+        echo
+
+        case "$AGAIN_CHOICE" in
+
+            y|Y)
+                return 0
+                ;;
+
+            n|N)
+                return 1
+                ;;
+
+            *)
+                # Loop redraws the prompt automatically
+                ;;
+
+        esac
+
+    done
+
 }
 
 
 # ============================================================
-# GIF CONVERSION FUNCTION
+# GIF CONVERSION FUNCTION (supports multiple files)
 # ============================================================
 
-convert_gif() {
+convert_gifs() {
 
-    clear
-    print_header
-    echo "================================================"
-    echo "              SELECT NOITA GIF"
-    echo "================================================"
-    echo
+    while true; do
 
-    echo "Opening Finder..."
-    echo
+        print_select_screen
+
+        echo "Current upscale factor: x${UPSCALE_FACTOR}"
+        echo
+        echo "Select one or more GIF files."
+        echo "Opening Finder..."
+        echo
 
 
-    GIF_PATH=$(osascript <<'APPLESCRIPT'
+        GIF_PATHS=$(osascript <<'APPLESCRIPT'
 try
-    set selectedFile to choose file with prompt "Select a Noita animated screenshot:" of type {"com.compuserve.gif"}
-    POSIX path of selectedFile
+    set selectedFiles to choose file with prompt "Select GIF file(s):" of type {"com.compuserve.gif"} with multiple selections allowed
+    set posixPaths to {}
+    repeat with aFile in selectedFiles
+        set end of posixPaths to POSIX path of aFile
+    end repeat
+    set AppleScript's text item delimiters to linefeed
+    set pathsText to posixPaths as text
+    set AppleScript's text item delimiters to ""
+    return pathsText
 on error
     return ""
 end try
@@ -544,40 +742,77 @@ APPLESCRIPT
 )
 
 
-    # --------------------------------------------------------
-    # User cancelled
-    # --------------------------------------------------------
+        # ----------------------------------------------------
+        # User cancelled / nothing selected
+        # ----------------------------------------------------
 
-    if [ -z "$GIF_PATH" ]; then
+        if [ -n "$GIF_PATHS" ]; then
+            break
+        fi
 
+
+        print_select_screen
+
+        echo "No GIF was selected."
         echo
-        echo "No file selected."
+        echo "Continue picking files? [y/n]"
         echo
 
-        return 1
 
-    fi
+        while true; do
+
+            read -n 1 CONTINUE_CHOICE
+            echo
+
+            case "$CONTINUE_CHOICE" in
+
+                y|Y)
+
+                    # Open Finder again
+                    break
+                    ;;
 
 
-    GIF_PATH="${GIF_PATH%$'\n'}"
+                n|N)
+
+                    # Return to the main menu
+                    return 1
+                    ;;
+
+
+                *)
+
+                    echo
+                    echo "Please choose [y] or [n]."
+                    echo
+
+                    ;;
+
+            esac
+
+        done
+
+    done
 
 
     # --------------------------------------------------------
-    # File information
+    # Split the returned paths into an array (bash 3.2 safe)
     # --------------------------------------------------------
 
-    GIF_DIR="$(dirname "$GIF_PATH")"
+    GIF_ARRAY=()
 
-    ORIGINAL_FILENAME="$(basename "$GIF_PATH")"
+    while IFS= read -r LINE; do
+        [ -n "$LINE" ] && GIF_ARRAY+=("$LINE")
+    done <<< "$GIF_PATHS"
 
-    FILENAME="${ORIGINAL_FILENAME%.*}"
+    TOTAL=${#GIF_ARRAY[@]}
 
 
     # --------------------------------------------------------
-    # Output folders
+    # Output folders (next to this .command file)
     # --------------------------------------------------------
 
-    OUT_DIR="$GIF_DIR/Output"
+    OUT_DIR="$SCRIPT_DIR/Output"
     GIF_OUT_DIR="$OUT_DIR/GIF"
     MP4_OUT_DIR="$OUT_DIR/MP4"
 
@@ -586,168 +821,110 @@ APPLESCRIPT
 
 
     # --------------------------------------------------------
-    # Find unused output filename
-    #
-    # Both files always receive the same suffix.
-    #
-    # Example:
-    #
-    # Screenshot-Upscaled.gif
-    # Screenshot-Video.mp4
-    #
-    # Screenshot-Upscaled (1).gif
-    # Screenshot-Video (1).mp4
+    # Process each file, one status line per file
     # --------------------------------------------------------
 
-    SUFFIX=""
+    clear
+    print_header
 
-    COUNTER=1
+    echo "================================================"
+    echo "                PROCESSING GIFS"
+    echo "================================================"
+    echo
+
+    echo "$TOTAL file(s) selected."
+    echo "Upscale factor: x${UPSCALE_FACTOR}"
+    echo
+
+    SUCCESS_COUNT=0
+    FAIL_COUNT=0
+    INDEX=0
 
 
-    while true; do
+    for GIF_PATH in "${GIF_ARRAY[@]}"; do
 
-        UPSCALED_GIF="$GIF_OUT_DIR/${FILENAME}-Upscaled${SUFFIX}.gif"
+        INDEX=$((INDEX + 1))
 
-        OUTPUT_MP4="$MP4_OUT_DIR/${FILENAME}-Video${SUFFIX}.mp4"
+        ORIGINAL_FILENAME="$(basename "$GIF_PATH")"
+        FILENAME="${ORIGINAL_FILENAME%.*}"
 
 
-        if [ ! -e "$UPSCALED_GIF" ] && [ ! -e "$OUTPUT_MP4" ]; then
-            break
+        # Find an unused output filename for this file
+        SUFFIX=""
+        COUNTER=1
+
+        while true; do
+
+            UPSCALED_GIF="$GIF_OUT_DIR/${FILENAME}-Upscaled${SUFFIX}.gif"
+            OUTPUT_MP4="$MP4_OUT_DIR/${FILENAME}-Video${SUFFIX}.mp4"
+
+            if [ ! -e "$UPSCALED_GIF" ] && [ ! -e "$OUTPUT_MP4" ]; then
+                break
+            fi
+
+            SUFFIX=" ($COUNTER)"
+            COUNTER=$((COUNTER + 1))
+
+        done
+
+
+        gifsicle \
+            --scale "$UPSCALE_FACTOR" \
+            --resize-method sample \
+            "$GIF_PATH" \
+            -o "$UPSCALED_GIF" >/dev/null 2>&1 &
+
+        animate_step $!
+
+        if [ $? -ne 0 ]; then
+            printf "\r[%d/%d] %s [FAILED (gifsicle)]          \n" "$INDEX" "$TOTAL" "$ORIGINAL_FILENAME"
+            FAIL_COUNT=$((FAIL_COUNT + 1))
+            continue
         fi
 
 
-        SUFFIX=" ($COUNTER)"
+        ffmpeg \
+            -f gif \
+            -i "$UPSCALED_GIF" \
+            -pix_fmt yuv420p \
+            -c:v libx264 \
+            "$OUTPUT_MP4" >/dev/null 2>&1 &
 
-        COUNTER=$((COUNTER + 1))
+        animate_step $!
+
+        if [ $? -ne 0 ]; then
+            printf "\r[%d/%d] %s [FAILED (ffmpeg)]          \n" "$INDEX" "$TOTAL" "$ORIGINAL_FILENAME"
+            FAIL_COUNT=$((FAIL_COUNT + 1))
+            continue
+        fi
+
+
+        printf "\r[%d/%d] %s [done]          \n" "$INDEX" "$TOTAL" "$ORIGINAL_FILENAME"
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
 
     done
 
 
     # --------------------------------------------------------
-    # Tell user if duplicate was found
+    # Summary
     # --------------------------------------------------------
 
-    if [ -n "$SUFFIX" ]; then
-
-        echo
-        echo "An output with this name already exists."
-        echo
-        echo "Using the next available name:"
-        echo
-        echo "  ${FILENAME}-Upscaled${SUFFIX}.gif"
-        echo "  ${FILENAME}-Video${SUFFIX}.mp4"
-        echo
-
-    fi
-
-
-    # ========================================================
-    # UPSCALE GIF
-    # ========================================================
-
-    clear
-    print_header
-    echo "================================================"
-    echo "                UPSCALING GIF"
-    echo "================================================"
     echo
-
-    echo "Original:"
-    echo "  $ORIGINAL_FILENAME"
-    echo
-
-    echo "Target resolution:"
-    echo "  2560 x 1440"
-    echo
-
-    echo "Output:"
-    echo "  $(basename "$UPSCALED_GIF")"
-    echo
-
-    echo "Processing..."
-    echo
-
-
-    gifsicle \
-        --resize 2560x1440 \
-        --resize-method sample \
-        "$GIF_PATH" \
-        -o "$UPSCALED_GIF"
-
-
-    if [ $? -ne 0 ]; then
-
-        echo
-        echo "ERROR: Gifsicle failed."
-        echo
-
-        return 1
-
-    fi
-
-
-    echo
-    echo "Upscaled GIF complete."
-    echo
-    echo "Saved to:"
-    echo "  $UPSCALED_GIF"
-
-
-    # ========================================================
-    # CONVERT GIF -> MP4
-    # ========================================================
-
-    clear
-    print_header
-    echo "================================================"
-    echo "                 CREATING MP4"
-    echo "================================================"
-    echo
-
-    echo "Output:"
-    echo "  $(basename "$OUTPUT_MP4")"
-    echo
-
-    echo "Processing..."
-    echo
-
-
-    ffmpeg \
-        -f gif \
-        -i "$UPSCALED_GIF" \
-        -pix_fmt yuv420p \
-        -c:v libx264 \
-        "$OUTPUT_MP4"
-
-
-    if [ $? -ne 0 ]; then
-
-        echo
-        echo "ERROR: FFmpeg failed."
-        echo
-
-        return 1
-
-    fi
-
-
-    # ========================================================
-    # COMPLETE
-    # ========================================================
-
-    clear
-    print_header
     echo "================================================"
     echo "                  COMPLETE!"
     echo "================================================"
     echo
 
-    echo "Upscaled GIF:"
-    echo "  $UPSCALED_GIF"
+    echo "Processed: $SUCCESS_COUNT / $TOTAL succeeded"
+
+    if [ "$FAIL_COUNT" -gt 0 ]; then
+        echo "           $FAIL_COUNT failed"
+    fi
+
     echo
 
-    echo "MP4:"
-    echo "  $OUTPUT_MP4"
+    echo "Output folder:"
+    echo "  $OUT_DIR"
     echo
 
 
@@ -760,7 +937,7 @@ APPLESCRIPT
 
 
 # ============================================================
-# INITIAL MENU
+# MAIN MENU
 # ============================================================
 
 show_menu
@@ -768,28 +945,75 @@ show_menu
 
 while true; do
 
-    read -p "Choice: " MAIN_CHOICE
+    read -n 1 MAIN_CHOICE
+    echo
 
     case "$MAIN_CHOICE" in
 
         o|O)
 
-            convert_gif
-            break
+            # Keep the user in the conversion flow until they
+            # choose N, which returns them to the main menu.
+            while true; do
+
+                convert_gifs
+
+                # If the user cancelled the Finder selection,
+                # return to the main menu.
+                if [ $? -ne 0 ]; then
+                    show_menu
+                    break
+                fi
+
+                if ask_convert_more; then
+                    continue
+                else
+                    show_menu
+                    break
+                fi
+
+            done
+            ;;
+
+
+        f|F)
+
+            set_factor
+            ;;
+
+
+        i|I)
+
+            show_info
+
+            while true; do
+
+                read -n 1 INFO_CHOICE
+                echo
+
+                case "$INFO_CHOICE" in
+
+                    b|B)
+
+                        show_menu
+                        break
+                        ;;
+
+
+                    *)
+
+                        show_info
+                        ;;
+
+                esac
+
+            done
             ;;
 
 
         q|Q)
 
-            clear
-            print_header
-            echo "================================================"
-            echo "                   GOODBYE."
-            echo "================================================"
-            echo
-
-            read -p "Press Enter to close..."
-            exit 0
+            show_goodbye
             ;;
 
 
@@ -799,69 +1023,5 @@ while true; do
             ;;
 
     esac
-
-done
-
-
-# ============================================================
-# REPEAT CONVERSION LOOP
-# ============================================================
-
-while true; do
-
-    clear
-    print_header
-    echo "Convert another GIF? [y/n]"
-    echo
-
-
-    while true; do
-
-        read -p "Choice: " AGAIN_CHOICE
-
-        case "$AGAIN_CHOICE" in
-
-            y|Y)
-
-                echo
-                echo "Opening the file selector..."
-                echo
-
-                # Finder opens immediately
-                convert_gif
-
-                # After conversion, ask again
-                break
-                ;;
-
-
-            n|N)
-
-                clear
-                print_header
-                echo "================================================"
-                echo "                   GOODBYE."
-                echo "================================================"
-                echo
-                echo "Thanks for using Noita GIF Upscaler & Converter! :-)"
-                echo
-
-                read -p "Press Enter to close..."
-                exit 0
-                ;;
-
-
-            *)
-
-                clear
-                print_header
-                echo "Convert another GIF? [y/n]"
-                echo
-
-                ;;
-
-        esac
-
-    done
 
 done
