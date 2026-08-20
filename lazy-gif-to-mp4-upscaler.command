@@ -17,15 +17,36 @@
 
 
 # ------------------------------------------------------------
-# Header (reusable, so we can reprint it after clearing)
+# Header (shown on startup and the main menu)
 # ------------------------------------------------------------
 
 print_header() {
-    echo "================================================"
-    echo "            LAZY GIF TO MP4 UPSCALER"
-    echo "                 macOS Edition"
-    echo "================================================"
+    echo "╭──────────────────────────────────────────────╮"
+    echo "│           LAZY GIF TO MP4 UPSCALER           │"
+    echo "╰──────────────────────────────────────────────╯"
     echo
+}
+
+
+# ------------------------------------------------------------
+# Reusable boxed title, used by every screen in the program.
+# Keeps box width/centering consistent in one place instead
+# of hand-typing borders + padding on every screen.
+# ------------------------------------------------------------
+
+print_box() {
+
+    local title="$1"
+    local width=46
+
+    local title_len=${#title}
+    local pad_l=$(( (width - title_len) / 2 ))
+    local pad_r=$(( width - title_len - pad_l ))
+
+    printf "╭%s╮\n" "$(printf '%*s' "$width" '')"
+    printf "│%*s%s%*s│\n" "$pad_l" "" "$title" "$pad_r" ""
+    printf "╰%s╯\n" "$(printf '%*s' "$width" '')"
+
 }
 
 
@@ -42,11 +63,8 @@ show_goodbye() {
     local message="$1"
 
     clear
-    print_header
 
-    echo "================================================"
-    echo "                  GOODBYE! :)"
-    echo "================================================"
+    print_box "GOODBYE! :)"
     echo
 
     if [ -n "$message" ]; then
@@ -140,13 +158,8 @@ install_dependency() {
     local pkg_name="$1"     # e.g. "gifsicle"
     local title="$2"        # e.g. "INSTALLING GIFSICLE"
 
-    local title_len=${#title}
-    local pad_l=$(( (48 - title_len) / 2 ))
-
     echo
-    echo "================================================"
-    printf "%*s%s\n" "$pad_l" "" "$title"
-    echo "================================================"
+    print_box "$title"
     echo
 
     brew install "$pkg_name"
@@ -208,15 +221,15 @@ fi
 # ------------------------------------------------------------
 
 if [ "$GIFSICLE_INSTALLED" = true ]; then
-    echo "gifsicle    [v] Installed"
+    echo "  gifsicle    [v] Installed"
 else
-    echo "gifsicle    [x] Not installed"
+    echo "  gifsicle    [x] Not installed"
 fi
 
 if [ "$FFMPEG_INSTALLED" = true ]; then
-    echo "ffmpeg      [v] Installed"
+    echo "  ffmpeg      [v] Installed"
 else
-    echo "ffmpeg      [x] Not installed"
+    echo "  ffmpeg      [x] Not installed"
 fi
 
 echo
@@ -246,11 +259,8 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
     print_missing_prompt() {
 
         clear
-        print_header
 
-        echo "================================================"
-        echo "              MISSING COMPONENTS"
-        echo "================================================"
+        print_box "MISSING COMPONENTS!"
         echo
 
         if [ "$MISSING_COUNT" -eq 2 ]; then
@@ -352,7 +362,6 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
         print_brew_prompt() {
 
             clear
-            print_header
 
             echo "Homebrew is not installed."
             echo
@@ -391,9 +400,7 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
                     if [ $BREW_RESULT -ne 0 ]; then
 
                         echo
-                        echo "================================================"
-                        echo "            HOMEBREW INSTALL FAILED"
-                        echo "================================================"
+                        print_box "HOMEBREW INSTALL FAILED!"
                         echo
                         echo "Homebrew could not be installed."
                         echo
@@ -482,21 +489,19 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
     # ========================================================
 
     echo
-    echo "================================================"
-    echo "          COMPONENTS ARE READY"
-    echo "================================================"
+    print_box "COMPONENTS ARE READY!"
     echo
 
     if command -v gifsicle >/dev/null 2>&1; then
-        echo "gifsicle    [v] Ready"
+        echo "  gifsicle    [v] Ready"
     else
-        echo "gifsicle    [x] Missing"
+        echo "  gifsicle    [x] Missing"
     fi
 
     if command -v ffmpeg >/dev/null 2>&1; then
-        echo "ffmpeg      [v] Ready"
+        echo "  ffmpeg      [v] Ready"
     else
-        echo "ffmpeg      [x] Missing"
+        echo "  ffmpeg      [x] Missing"
     fi
 
     echo
@@ -514,7 +519,7 @@ sleep 1
 
 
 # ------------------------------------------------------------
-# Main menu
+# Main menu (the only screen that shows the header)
 # ------------------------------------------------------------
 
 show_menu() {
@@ -545,11 +550,8 @@ set_factor() {
     while true; do
 
         clear
-        print_header
 
-        echo "================================================"
-        echo "              SET UPSCALE FACTOR"
-        echo "================================================"
+        print_box "SET UPSCALE FACTOR"
         echo
         echo "Current factor: x${UPSCALE_FACTOR}"
         echo
@@ -591,14 +593,11 @@ set_factor() {
 show_info() {
 
     clear
-    print_header
 
-    echo "================================================"
-    echo "                    INFO"
-    echo "================================================"
+    print_box "INFO"
     echo
 
-    echo "Lazy GIF to MP4 Upscaler upscales any GIF by"
+    echo "lazy-gif-to-mp4-upscaler upscales any GIF by"
     echo "a factor you set (default x4) and converts"
     echo "it into MP4, using gifsicle and ffmpeg."
     echo
@@ -648,11 +647,8 @@ animate_step() {
 print_select_screen() {
 
     clear
-    print_header
 
-    echo "================================================"
-    echo "                 SELECT GIF(S)"
-    echo "================================================"
+    print_box "SELECT GIF(S)"
     echo
 
 }
@@ -670,11 +666,8 @@ ask_convert_more() {
     while true; do
 
         clear
-        print_header
 
-        echo "================================================"
-        echo "                CONVERSION COMPLETE"
-        echo "================================================"
+        print_box "CONVERSION COMPLETE"
         echo
 
         echo "Current upscale factor: x${UPSCALE_FACTOR}"
@@ -751,15 +744,20 @@ APPLESCRIPT
         fi
 
 
-        print_select_screen
-
-        echo "No GIF was selected."
-        echo
-        echo "Continue picking files? [y/n]"
-        echo
-
+        # ----------------------------------------------------
+        # Ask whether to try again -- redraws the whole
+        # screen every time, including on invalid input, so
+        # nothing stacks up on repeated wrong keypresses.
+        # ----------------------------------------------------
 
         while true; do
+
+            print_select_screen
+
+            echo "No GIF was selected."
+            echo
+            echo "Continue picking files? [y/n]"
+            echo
 
             read -n 1 CONTINUE_CHOICE
             echo
@@ -782,10 +780,7 @@ APPLESCRIPT
 
                 *)
 
-                    echo
-                    echo "Please choose [y] or [n]."
-                    echo
-
+                    # Loop redraws the prompt automatically
                     ;;
 
             esac
@@ -825,11 +820,8 @@ APPLESCRIPT
     # --------------------------------------------------------
 
     clear
-    print_header
 
-    echo "================================================"
-    echo "                PROCESSING GIFS"
-    echo "================================================"
+    print_box "PROCESSING GIFS"
     echo
 
     echo "$TOTAL file(s) selected."
@@ -910,9 +902,7 @@ APPLESCRIPT
     # --------------------------------------------------------
 
     echo
-    echo "================================================"
-    echo "                  COMPLETE!"
-    echo "================================================"
+    print_box "COMPLETE!"
     echo
 
     echo "Processed: $SUCCESS_COUNT / $TOTAL succeeded"
